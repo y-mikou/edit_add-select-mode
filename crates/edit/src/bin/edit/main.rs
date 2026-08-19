@@ -144,18 +144,102 @@ fn run() -> apperr::Result<()> {
             let mut input_iter = input_parser.parse(vt_iter);
 
             while {
-                let input = input_iter.next();
-                let more = input.is_some();
-                let mut ctx = tui.create_context(input);
+                let raw_input = input_iter.next();
+                let more = raw_input.is_some();
 
-                draw(&mut ctx, &mut state);
+                // Global shortcut: Alt+R toggles range select mode without opening the menu.
+                if let Some(input::Input::Keyboard(k)) = &raw_input {
+                    if *k == (kbmod::ALT | vk::R) {
+                        if let Some(doc) = state.documents.active() {
+                            {
+                                let mut tb = doc.buffer.borrow_mut();
+                                // Toggle the mode and handle anchor/selection the same way as the menu.
+                                state.range_select_mode = !state.range_select_mode;
+                                if state.range_select_mode {
+                                    state.range_select_anchor = Some(tb.cursor_logical_pos());
+                                } else if let Some(anchor) = state.range_select_anchor.take() {
+                                    let current = tb.cursor_logical_pos();
+                                    tb.cursor_move_to_logical(anchor);
+                                    tb.start_selection();
+                                    tb.selection_update_logical(current);
+                                }
+                            }
+                        }
+                        let filtered_input = None;
+                        let mut ctx = tui.create_context(filtered_input);
 
-                #[cfg(feature = "debug-latency")]
-                {
-                    passes += 1;
+                        draw(&mut ctx, &mut state);
+
+                        #[cfg(feature = "debug-latency")]
+                        {
+                            passes += 1;
+                        }
+
+                        more
+                    } else {
+                        // If range selection mode is active, drop any input that is not
+                        // cursor movement, menubar interaction (mouse/enter/space/F10), or resize.
+                        let filtered_input = if state.range_select_mode {
+                            match raw_input {
+                                Some(input::Input::Keyboard(k)) => {
+                                    let key = k.key();
+                                    match key {
+                                        vk::LEFT | vk::RIGHT | vk::UP | vk::DOWN | vk::HOME | vk::END
+                                        | vk::PRIOR | vk::NEXT | vk::RETURN | vk::SPACE | vk::F10
+                                        | vk::ESCAPE => raw_input,
+                                        _ => None,
+                                    }
+                                }
+                                Some(input::Input::Mouse(_)) | Some(input::Input::Resize(_)) => raw_input,
+                                _ => None,
+                            }
+                        } else {
+                            raw_input
+                        };
+
+                        let mut ctx = tui.create_context(filtered_input);
+
+                        draw(&mut ctx, &mut state);
+
+                        #[cfg(feature = "debug-latency")]
+                        {
+                            passes += 1;
+                        }
+
+                        more
+                    }
+                } else {
+                    // If range selection mode is active, drop any input that is not
+                    // cursor movement, menubar interaction (mouse/enter/space/F10), or resize.
+                    let filtered_input = if state.range_select_mode {
+                        match raw_input {
+                            Some(input::Input::Keyboard(k)) => {
+                                let key = k.key();
+                                match key {
+                                    vk::LEFT | vk::RIGHT | vk::UP | vk::DOWN | vk::HOME | vk::END
+                                    | vk::PRIOR | vk::NEXT | vk::RETURN | vk::SPACE | vk::F10
+                                    | vk::ESCAPE => raw_input,
+                                    _ => None,
+                                }
+                            }
+                            Some(input::Input::Mouse(_)) | Some(input::Input::Resize(_)) => raw_input,
+                            _ => None,
+                        }
+                    } else {
+                        raw_input
+                    };
+
+                    let mut ctx = tui.create_context(filtered_input);
+
+                    draw(&mut ctx, &mut state);
+
+                    #[cfg(feature = "debug-latency")]
+                    {
+                        passes += 1;
+                    }
+
+                    more
                 }
-
-                more
             } {}
         }
 

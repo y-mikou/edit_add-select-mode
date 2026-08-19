@@ -9,6 +9,11 @@ rust-version.workspace = true
 
 build = "build/main.rs"
 categories = ["text-editors"]
+autobins = false
+
+[[bin]]
+name = "edit_r-sel"
+path = "src/bin/edit/main.rs"
 
 [[bench]]
 name = "lib"
