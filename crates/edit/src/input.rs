@@ -42,7 +42,7 @@ impl InputKey {
         self.0
     }
 
-    pub(crate) const fn key(&self) -> Self {
+    pub const fn key(&self) -> Self {
         Self(self.0 & 0x00FFFFFF)
     }
 

@@ -3291,7 +3291,9 @@ impl<'a> Context<'a, '_> {
         }
 
         let clicked =
-            self.button_activated() || self.consume_shortcut(InputKey::new(accelerator as u32));
+            self.button_activated()
+            || self.consume_shortcut(InputKey::new(accelerator as u32))
+            || self.consume_shortcut(kbmod::ALT | InputKey::new(accelerator as u32));
 
         self.button_label(
             "menu_checkbox",

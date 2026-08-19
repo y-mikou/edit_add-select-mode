@@ -118,6 +118,24 @@ fn draw_menu_edit(ctx: &mut Context, state: &mut State) {
         tb.select_all();
         ctx.needs_rerender();
     }
+    // Range select mode toggle
+    if ctx.menubar_menu_checkbox("範囲選択の開始/終了", 'R', kbmod::ALT | vk::R, state.range_select_mode) {
+        // Toggle the mode
+        state.range_select_mode = !state.range_select_mode;
+        if state.range_select_mode {
+            // Entering range select mode: record anchor at current cursor.
+            state.range_select_anchor = Some(tb.cursor_logical_pos());
+        } else {
+            // Exiting: if we have an anchor, create a selection from anchor to current cursor.
+            if let Some(anchor) = state.range_select_anchor.take() {
+                let current = tb.cursor_logical_pos();
+                tb.cursor_move_to_logical(anchor);
+                tb.start_selection();
+                tb.selection_update_logical(current);
+            }
+        }
+        ctx.needs_rerender();
+    }
     ctx.menubar_menu_end();
 }
 
