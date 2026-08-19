@@ -1,6 +1,6 @@
 # Edit(範囲選択モード追加)
 
-基本機能は本家のEdit(https://github.com/microsoft/edit)に準拠します。
+基本機能は本家のEdit(https://github.com/microsoft/edit) に準拠します。
 
 当リポジトリへフォークされたのは2026/08/19です(このバージョンは`org_edit`ブランチに保持されています)。
 
